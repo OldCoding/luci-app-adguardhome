@@ -120,49 +120,33 @@ doupdate_core(){
 	echo -e "Updating core..." 
 	mkdir -p "/tmp/AdGuardHomeupdate"
 	rm -rf /tmp/AdGuardHomeupdate/* >/dev/null 2>&1
-	Archt="$(opkg info kernel | grep Architecture | awk -F "[ _]" '{print($2)}')"
+	Archt="$( uname -m )"
 	case $Archt in
-	"i386")
-	Arch="386"
-	;;
-	"i686")
-	Arch="386"
-	;;
-	"x86")
-	Arch="amd64"
-	;;
-	"mipsel")
-	Arch="mipsle"
-	;;
-	"mips64el")
-	Arch="mips64le"
-	Arch="mipsle"
-	echo -e "mips64el use $Arch may have bug" 
-	;;
-	"mips")
-	Arch="mips"
-	;;
-	"mips64")
-	Arch="mips64"
-	Arch="mips"
-	echo -e "mips64 use $Arch may have bug" 
-	;;
-	"arm")
-	Arch="arm"
-	;;
-	"aarch64")
-	Arch="arm64"
-	;;
-	"powerpc")
-	Arch="ppc"
-	echo -e "error not support $Archt" 
-	EXIT 1
-	;;
-	"powerpc64")
-	Arch="ppc64"
-	echo -e "error not support $Archt" 
-	EXIT 1
-	;;
+	"x86_64"|"x86-64"|"x64"|"amd64")
+		Arch="amd64"
+		;;
+	"i386"|"i486"|"i686"|"i786"|"x86")
+		Arch="386"
+		;;
+	"armv5l")
+		Arch="armv5"
+		;;
+	"armv6l")
+		Arch="armv6"
+		;;
+	"armv7l"|"armv8l")
+		Arch="armv7"
+		;;
+	"aarch64"|"arm64")
+		Arch="arm64"
+		;;
+	"mips"|"mips64")
+		if is_little_endian
+		then
+			Arch="${Arch}le"
+		fi
+		Arch="${Arch}_softfloat"
+		;;
 	*)
 	echo -e "error not support $Archt if you can use offical release please issue a bug" 
 	EXIT 1
