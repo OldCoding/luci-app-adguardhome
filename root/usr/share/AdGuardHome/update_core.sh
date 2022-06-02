@@ -53,50 +53,52 @@ check_latest_version(){
 			EXIT 0
 	fi
 }
+is_little_endian() {
+	# The ASCII character "I" has the octal code of 111.  In the two-byte octal
+	# display mode (-o), hexdump will print it either as "000111" on a little
+	# endian system or as a "111000" on a big endian one.  Return the sixth
+	# character to compare it against the number '1'.
+	#
+	# Do not use echo -n, because its behavior in the presence of the -n flag is
+	# explicitly implementation-defined in POSIX.  Use hexdump instead of od,
+	# because OpenWrt and its derivatives have the former but not the latter.
+	is_little_endian_result="$(
+		printf 'I'\
+			| hexdump -o\
+			| awk '{ print substr($2, 6, 1); exit; }'
+	)"
+	readonly is_little_endian_result
+
+	[ "$is_little_endian_result" -eq '1' ]
+}
 doupx(){
-	Archt="$(opkg info kernel | grep Architecture | awk -F "[ _]" '{print($2)}')"
+	Archt="$( uname -m )"
 	case $Archt in
-	"i386")
-	Arch="i386"
-	;;
-	"i686")
-	Arch="i386"
-	echo -e "i686 use $Arch may have bug" 
-	;;
-	"x86")
-	Arch="amd64"
-	;;
-	"mipsel")
-	Arch="mipsel"
-	;;
-	"mips64el")
-	Arch="mips64el"
-	Arch="mipsel"
-	echo -e "mips64el use $Arch may have bug" 
-	;;
-	"mips")
-	Arch="mips"
-	;;
-	"mips64")
-	Arch="mips64"
-	Arch="mips"
-	echo -e "mips64 use $Arch may have bug" 
-	;;
-	"arm")
-	Arch="arm"
-	;;
-	"armeb")
-	Arch="armeb"
-	;;
-	"aarch64")
-	Arch="arm64"
-	;;
-	"powerpc")
-	Arch="powerpc"
-	;;
-	"powerpc64")
-	Arch="powerpc64"
-	;;
+	"x86_64"|"x86-64"|"x64"|"amd64")
+		Arch="amd64"
+		;;
+	"i386"|"i486"|"i686"|"i786"|"x86")
+		Arch="386"
+		;;
+	"armv5l")
+		Arch="armv5"
+		;;
+	"armv6l")
+		Arch="armv6"
+		;;
+	"armv7l"|"armv8l")
+		Arch="armv7"
+		;;
+	"aarch64"|"arm64")
+		Arch="arm64"
+		;;
+	"mips"|"mips64")
+		if is_little_endian
+		then
+			Arch="${Arch}le"
+		fi
+		Arch="${Arch}_softfloat"
+		;;
 	*)
 	echo -e "error not support $Archt if you can use offical release please issue a bug" 
 	EXIT 1
